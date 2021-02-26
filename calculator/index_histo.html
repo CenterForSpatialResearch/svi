@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Mapping the New Politics of Care</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://unpkg.com/intersection-observer@0.5.1/intersection-observer.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,300;0,400;0,500;0,700;1,200&display=swap" rel="stylesheet">
+    <script src="../js/jquery.js"></script>
+    <!-- <script type="text/javascript" src="../js/d3.js"></script> -->
+    
+    <script src="https://d3js.org/d3.v6.js"></script>
+    
+    <script type="text/javascript" src="../js/crossfilter.js"></script>
+    <script type="text/javascript" src="../js/dc.js"></script>
+    <script type="text/javascript" src="../js/queue.v1.min.js"></script>
+    <script type="text/javascript" src="calculator_histo.js"></script>
+    <style>
+        body {
+            margin:0; 
+            padding:0; 
+            font-family: 'Work Sans', sans-serif;
+        }
+        a, a:hover, a:visited {
+            color: #0071bc;
+        }
+        #title{
+          font-size:36px;
+          font-weight:300;
+        }
+        #info{
+          width:18vw;
+          margin:1vw;
+          padding:1vw;
+          height:92vh;
+          min-width:200px;
+          display:inline-block;
+        }
+        #left{
+          width:80vw;
+          position:absolute;
+          left:21vw;
+          top:0px;
+          margin:1vw;
+          padding:1vw;
+          height:92vh;
+          display:inline-block;
+          font-size:14px;
+          font-weight:300;
+        }
+        #right{
+          width:22vw;
+          border:1px solid black;
+          position:absolute;
+          left:74vw;
+          top:0px;
+          margin:1vw;
+          padding:1vw;
+          height:92vh;
+          display:inline-block;
+          font-size:24px;
+          font-weight:300;
+        }
+        #blue{
+          color:magenta;
+        }
+        .count{
+          border:none;
+          font-size:30px;
+          text-align:right;
+         
+          font-weight:100;
+          color:magenta;
+        }
+        .catName{
+          font-size:14px;
+          font-weight:400;
+          width:100px;
+        }
+        .plus{
+          border:none;
+          color:magenta;
+           height:15px;
+           width:15px;
+           text-align:center;
+           padding:0px;
+           cursor:pointer;
+           font-size:12px;
+        }
+        .minus{
+           border:none;
+           color:magenta;
+           height:15px;
+           width:15px;
+           text-align:center;
+           padding:0px;
+           cursor:pointer;
+           font-size:12px;
+        }
+        input{
+          font-family: 'Work Sans', sans-serif;
+          font-weight:300;
+        }
+       
+        #randomCounty{
+          color:magenta;
+        }
+        #percentileLabel{
+          color:#00aeef;
+          font-style:italic;
+          font-weight:300;
+        }
+        #adding{
+          color:#00aeef;
+          font-style:italic;
+          font-size:14px;
+        }
+        #yourCountyTitle{
+          font-size:36px;
+          color:#00aeef;
+        }
+        .percentileNumber{
+          color:#00aeef;
+          font-size:24px;
+          font-weight:100;
+          line-height:70%;
+        }
+        .percentileNumberDiv{
+          text-align:right;
+          width:80px;
+          font-size:24px;
+          line-height:80%;
+        }
+        #header2{
+          width:320px;
+          display:inline-block;
+          text-align:right;
+          font-size:24px;
+          
+        }
+        #header1{
+          width:300px;
+          display:inline-block;
+          font-size:24px;
+        }
+       
+        </style>
+</head>
+<body>
+  <div id="info">
+      <div id="title">How is the<br><span id="blue">Social<br>Vulnerability<br>Index</span><br>Calculated?</div>
+      <div id="subtitle">
+        <p>
+          SVI uses these 15 tallies from the census ACS seen at the right. 
+        </p>
+        <p>
+          Here is how the svi score for <span id="randomCounty">Gentry County, Missouri</span> is calculated.
+        </p>
+        <p>
+          <span style="color:magenta">Adjust the numbers and see how the vulnerability score is effected.</span>
+        </p> 
+    </div>
+</div>
+<div id="left">
+  <div id="header1">If your <br>county has:</div>
+  <div id="header2">then its <br>ranking is: </div>
+  <br>
+<!--<input type="button" id="plus" class="button" value="+" style="margin-left:10px" onclick="PlusCaps()" />
+<input type="tel" id="caps" maxlength="3" size="3" min="0" max="999" pattern="[0-9]" value="0" />
+<input type="button" id="minus" class="button" value="-" style="margin-right:10px" onclick="MinusCaps()" /> -->
+
+</div>
+<!-- <div id="right">Then your county's SVI is
+  <div id="adding">0</div>
+  <div id="sum">0</div>
+
+</div> -->
+
+<script>
+  var measures = [
+    // "TOTPOP",
+ //    "HU",
+ //    "HH",
+  "AGE17",
+  "AGE65",
+  "CROWD",
+  "DISABL",
+  "GROUPQ",
+  "LIMENG",
+  "MINRTY",
+  "MOBILE",
+  "MUNIT",
+  "NOHSDP",
+  "NOVEH",
+  "PCI",
+  "POV",
+  "SNGPNT",
+  "UNEMP"
+  ]
+  var measuresPercentDenominators = {
+  AGE17:"of population",
+  AGE65:"of population",
+  DISABL:"of Noninstituionalized population",
+  LIMENG:"of population",
+  CROWD:"of households",
+  GROUPQ:"of population",
+  MINRTY:"of population",
+  MOBILE:"of housing units",
+  MUNIT:"of housing units",
+  NOHSDP:"of population 25+",
+  NOVEH:"of households",
+  PCI:"",
+  POV:"of population",
+  SNGPNT:"of households",
+  UNEMP:"of population 16+"
+  }
+  var measuresLabels = {
+    TOTPOP:"Total Persons",
+    HH:"Households",
+    HU:"Housing Units",
+  AGE17:"are 17 and younger",
+  AGE65:"are 65 and older",
+  DISABL:"have a disability",
+  LIMENG:"speak limited English",
+  CROWD:"have more people than rooms",
+  GROUPQ:"live in group quarters",
+  MINRTY:"are Minorities",
+  MOBILE:"are Mobile homes",
+  MUNIT:"are in structures with 10+ units",
+  NOHSDP:"have no high school diploma",
+  NOVEH:"have no vehicle available",
+  PCI:"Per capita income",
+  POV:"are below poverty",
+  SNGPNT:"have a single parent w/children under 18",
+  UNEMP:"are unemployed"
+  }
+  
+  for(var m in measures){
+    var div = d3.select("#left").append("div")//.style("border-bottom","1px solid black")
+  
+    
+    div.append("input").attr("type","tel").attr("maxlength","6")
+    .attr("min","0").attr("max","99999")
+    .attr("size","3")
+    .attr("pattern","[0-9]")
+    .attr("value","0")
+    .attr("id","count_"+measures[m])
+    .attr("class","count")
+    
+    var buttonsDiv = div.append("div").attr("id","buttons").style("display","inline-block")
+    .style("height","30px")
+    
+    buttonsDiv.append("div")
+    .attr("type","button").attr("id","plus_"+measures[m]).attr("class","plus").html("&#9650;")
+    .on("click",function(){
+      var clickedM = d3.select(this).attr("id").replace("plus_","")
+      PlusCaps(clickedM)
+    })
+    
+    // buttonsDiv.append("div")
+    
+    buttonsDiv.append("div")
+    .attr("type","button").attr("id","minus_"+measures[m]).attr("class","minus").html("&#9660;")
+    .on("click",function(){
+      var clickedM = d3.select(this).attr("id").replace("minus_","")
+      MinusCaps(clickedM)
+    })    
+    
+    div.append("div")
+    .html(function(){
+      if(measures[m]=="TOTPOP"||measures[m]=="HH"||measures[m]=="HU"){
+        return "&nbsp"+measuresLabels[measures[m]]
+      }else if(measures[m]=="PCI"){
+        return "&nbsp$ "+measuresLabels[measures[m]]
+        +"<br><span id=\"percentile_"+measures[m]+"\"></span>"
+      } else{
+        return "&nbsp% "+measuresPercentDenominators[measures[m]]+" "+measuresLabels[measures[m]]
+        // +"<br><span id=\"percentile_"+measures[m]+"\"></span>"
+      }
+    })
+    .style("display","inline-block").attr("class","catName")
+        //
+    // div.append("div").attr("id","percentileArrow_"+measures[m]).attr("class","arrowToPercentile")
+    // .style("display","inline-block").html("<img src=\"arrow.png\">")
+    div.append("div").attr("id","histo_"+measures[m])
+    .style("display","inline-block")  
+    div.append("div").attr("id","percentileNumbers_"+measures[m]).attr("class","percentileNumberDiv")
+    .style("display","inline-block")
+    
+ 
+      
+  }
+d3.select("#left").append("div").style("width","530px")
+  .style("border-top","1px solid black")
+  .style("margin-left","100px")
+  .attr("font-size","48px")
+  .attr("id","percentileTally")
+  .html("= 191029").style("text-align","right")
+
+</script>
+<div id="map"></div>
+<div id="story"></div>
+<div id="popup"></div>
+
+
+
+
+
+</body>
+</html>

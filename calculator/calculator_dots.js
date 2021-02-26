@@ -92,7 +92,6 @@ function getPercentiles(data,svi){
     //
             percentileTotal+=percentile
             precalcTotal+=parseFloat(precalcPercentile)
-    
             if(m==measures.length-1){
                 addingText+=percentile+" = "
                 
@@ -103,122 +102,84 @@ function getPercentiles(data,svi){
         
             d3.select("#percentileNumbers_"+measures[m])
             .html(function(){
-                    return ordered.indexOf(data)+"th out of "+svi.length+" counties"
-                    +"<br><span class=\"percentileNumber\">"+percentile+" percentile"+"</span>"
-                
+                if(m != measures.length-1){
+                    return "<span class=\"percentileNumber\">"+percentile
+                    +"</span><br>+"
+                }else{
+                    return "<span class=\"percentileNumber\">"+percentile
+                    +"</span>" 
+                }
             }
                 
             )
             
-            var h = 100
-            var w = 300
-            var p = 20
+            var w = 800
+            var p = 10
+            var r = 2
+            var perColumn = 25
             
+            var h = (r*2+1)*perColumn+p*2
+            
+            var c = d3.scaleLinear().domain([0,100]).range(["#aaa","black"])
+            d3.select("#histo_"+measures[m]+" svg").remove()
             var svg = d3.select("#histo_"+measures[m])
                     .append("svg")
-                    .attr("width",w+p*4)
-                    .attr("height",h+p*4)
+                    .attr("width",w+p*2)
+                    .attr("height",h+p*2)
             //https://observablehq.com/@d3/histogram
-           var bins = d3.bin()
-             .value(function(d){
-                 if(parseFloat(d["EP_"+measures[m]])<0){
-                     return 0
-                 }else{
-                     return parseFloat(d["EP_"+measures[m]])
-                 }
-             })
-            .thresholds(100)(svi)             
- 
-             var y = d3.scaleLinear()
-             .range([0,h])
-             .domain([0,d3.max(bins,function(d){return d.length})])
-             
-             
-             var y2 = d3.scaleLinear()
-             .range([0,h])
-             .domain([d3.max(bins,function(d){return d.length}),0])
-             
-             var x = d3.scaleLinear()
-             .range([0,w])
-             .domain([0,100])
-             console.log(measures[m])
-                 console.log(bins)
-             svg.append('text').text("Distribution for all counties "+measures[m]).attr("x",10).attr("y",10)//.attr("text-anchor","end")
-            svg.append("g")
-                  .call(d3.axisLeft(y2).ticks(5))
-                .attr("transform","translate(45,20)")
-             svg.append("text").text("# of counties").attr("x",10).attr("y",30).style("writing-mode","vertical-rl")
-             
-             svg.append("text").text("% of population").attr("x",w/2).attr("y",h+p*3)
-             
-            svg.append("g")
-                  .call(d3.axisBottom(x))
-                .attr("transform","translate(45,"+(h+20)+")")
-             
-           
-                 
+            
+            svi.push(data)
+            
+            var sorted = svi.sort(function(a,b){return a["EP_"+measures[m]]-b["EP_"+measures[m]]})
+            
+            console.log(sorted.indexOf(data))
+            
              svg.selectAll("rect")
-                 .data(bins)
+                 .data(sorted)
                  .enter()
                  .append("rect")
                  .attr("x",function(d,i){
-                     return x(d.x0)
+                     return Math.floor(i/25)*(r*2+2)+p
                  })
-                .attr("y",function(d,i){
-                    // console.log(d)
-                    return h-y(d.length)
-                })
-                .attr("count",function(d){
-                    return d.length
-                })
-                .attr("range",function(d){
-                    return d.x0 +"-"+d.x1
-                })
-              //   .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
-                 .attr("width", function(d) { return w/100-1;})
-                 .attr("height", function(d) { return y(d.length) })
-                 .style("fill", function(d,i){
-                     if(d.x0<data["EP_"+measures[m]]){
-                         return "#00aeef"
+                 .attr("y",function(d,i){
+                     return i%25*(r*2+2)+p
+                 })
+                 .attr("width",function(d,i){
+                     if(i==sorted.indexOf(data)){
+                         return 5
                      }else{
-                         return "#aaa"
+                         return r*2
                      }
                  })
-                .on("mouseover",function(d){
-                    console.log(d3.select(this).attr("count"))
-                })
-                .attr("transform","translate(45,20)")
-            
-            svg.append("circle").attr("r",3)
-                .attr("cx",function(){
-                    return x(data["EP_"+measures[m]])+45
-                })
-                .attr("cy",h+20)
-                .attr("fill","magenta")
-            svg.append("rect").attr("fill","magenta")
-                .attr("x",function(){
-                    return x(data["EP_"+measures[m]])+45
-                })
-                .attr("y",20)
-                .attr("width",1)
-                .attr("height",h)
-                
-            svg.append("text")
-                .attr("fill","magenta")
-                .attr("x",function(){
-                    return x(data["EP_"+measures[m]])+45
-                })
-                .attr("text-anchor","middle")
-                .attr("y",18)
-                .text(data["EP_"+measures[m]]+ "%")
-                .attr("fill","magenta")
+                 .attr("height",function(d,i){
+                     if(i==sorted.indexOf(data)){
+                         return 5
+                     }else{
+                         return r*2
+                     }
+                 })
+                 .attr("id",function(d,i){
+                     return measures[m]+"_"+d.FIPS
+                 })
+                 .attr("fill",function(d,i){
+                     if(i==sorted.indexOf(data)){
+                         return "magenta"
+                     }else if(i>sorted.indexOf(data)){
+                         return "gold"
+                     }else{
+                         return "#00aeef"
+                     }
+                 })
+                 .on("click",function(d){
+                     console.log(d3.select(this).attr("id"))
+                 })
         
-            // d3.select("#percentile_"+measures[m])
-//             .html(""//+Math.round(percentile*100)/100  +"</span> Percentile, "
-//             +"higher vulnerablility than "+ordered.indexOf(data)
-//                 +" other counties <br><span id=\"percentileLabel\">"
-//             // +Math.round(percentile*10000)/100+"th</span> percentile"
-//         )
+            d3.select("#percentile_"+measures[m])
+            .html(""//+Math.round(percentile*100)/100  +"</span> Percentile, "
+            +"higher vulnerablility than "+ordered.indexOf(data)
+                +" other counties <br><span id=\"percentileLabel\">"
+            // +Math.round(percentile*10000)/100+"th</span> percentile"
+        )
                         //
             // console.log([measures[m],percentile,precalcPercentile])
             // console.log([percentileTotal,precalcTotal])

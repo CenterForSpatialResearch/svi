@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Mapping the New Politics of Care</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://unpkg.com/intersection-observer@0.5.1/intersection-observer.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,300;0,400;0,500;0,700;1,200&display=swap" rel="stylesheet">
+    <script src="../js/jquery.js"></script>
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <script type="text/javascript" src="../js/crossfilter.js"></script>
+    <script type="text/javascript" src="../js/dc.js"></script>
+    <script type="text/javascript" src="../js/queue.v1.min.js"></script>
+    <style>
+        body {
+            margin:0; 
+            padding:0; 
+            font-family: 'Work Sans', sans-serif;
+        }
+      
+        </style>
+</head>
+<body>
+  <div id="info">
+      <div id="title">How is the<br><span id="blue">Social<br>Vulnerability<br>Index</span><br>Calculated?</div>
+      <div id="subtitle">
+        <p>
+          SVI uses these 15 tallies from the census ACS seen at the right. 
+        </p>
+        <p>
+          Here is how the svi score for <span id="randomCounty">Gentry County, Missouri</span> is calculated.
+        </p>
+        <p>
+          <span style="color:magenta">Adjust the numbers and see how the vulnerability score is effected.</span>
+        </p> 
+    </div>
+</div>
+<div id="left">
+  <div id="header1">If your <br>county has:</div>
+  <div id="header2">then its <br>ranking is: </div>
+  <br>
+<!--<input type="button" id="plus" class="button" value="+" style="margin-left:10px" onclick="PlusCaps()" />
+<input type="tel" id="caps" maxlength="3" size="3" min="0" max="999" pattern="[0-9]" value="0" />
+<input type="button" id="minus" class="button" value="-" style="margin-right:10px" onclick="MinusCaps()" /> -->
+
+</div>
+<!-- <div id="right">Then your county's SVI is
+  <div id="adding">0</div>
+  <div id="sum">0</div>
+
+</div> -->
+
+<script>
+  var measures = [
+    // "TOTPOP",
+ //    "HU",
+ //    "HH",
+  "AGE17",
+  "AGE65",
+  "CROWD",
+  "DISABL",
+  "GROUPQ",
+  "LIMENG",
+  "MINRTY",
+  "MOBILE",
+  "MUNIT",
+  "NOHSDP",
+  "NOVEH",
+  "PCI",
+  "POV",
+  "SNGPNT",
+  "UNEMP"
+  ]
+  
+  var allData = d3.csv("../geoData/SVI2018_US_COUNTY_short.csv")
+  var tempData = d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/1_OneNum.csv")
+  
+  Promise.all([allData,tempData])
+  .then(function(data){
+    console.log(data)
+      ready(data[0],data[1])
+  })
+  function ready(svi,temp){
+      console.log(svi)
+  var x = d3.scaleLinear()
+  .domain([0,1])
+  .range([0,600])
+    
+  var bins = d3.bin()
+    .value(function(d){
+       // return d.price
+        //console.log(parseFloat(d["EPL_"+measures[m]]))
+        //return d["EPL_"+measures[m]]
+        console.log(d["EPL_AGE17"])
+        if(parseFloat(d["EPL_AGE17"])<0){
+            return 0
+        }else{
+           // console.log(parseFloat(d["EPL_"+measures[m]]))
+            return d["EPL_AGE17"]
+        }
+    })
+    .thresholds(100)(svi)
+    
+    //var bins = histogram(svi)
+    console.log(bins)
+    
+      
+  }
+</script>
+<div id="map"></div>
+<div id="story"></div>
+<div id="popup"></div>
+
+
+
+
+
+</body>
+</html>

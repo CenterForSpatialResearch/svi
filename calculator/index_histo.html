@@ -39,6 +39,7 @@
           height:92vh;
           min-width:200px;
           display:inline-block;
+          position:fixed;
         }
         #left{
           width:80vw;
@@ -53,16 +54,16 @@
           font-weight:300;
         }
         #right{
-          width:22vw;
+          width:12vw;
           border:1px solid black;
-          position:absolute;
-          left:74vw;
+          position:fixed;
+          left:80vw;
           top:0px;
           margin:1vw;
           padding:1vw;
           height:92vh;
           display:inline-block;
-          font-size:24px;
+          font-size:18px;
           font-weight:300;
         }
         #blue{
@@ -70,7 +71,7 @@
         }
         .count{
           border:none;
-          font-size:30px;
+          font-size:40px;
           text-align:right;
          
           font-weight:100;
@@ -78,8 +79,8 @@
         }
         .catName{
           font-size:14px;
-          font-weight:400;
-          width:100px;
+          width:160px;
+          text-align:right;
         }
         .plus{
           border:none;
@@ -110,31 +111,30 @@
           color:magenta;
         }
         #percentileLabel{
-          color:#00aeef;
           font-style:italic;
-          font-weight:300;
-        }
+/*          font-weight:300;
+*/        }
         #adding{
-          color:#00aeef;
           font-style:italic;
           font-size:14px;
         }
         #yourCountyTitle{
-          font-size:36px;
-          color:#00aeef;
+          font-size:40px;
         }
         .percentileNumber{
-          color:#00aeef;
-          font-size:24px;
+          font-size:40px;
           font-weight:100;
-          line-height:70%;
+        }
+        .rankNumber{
+          font-size:40px;
+        }
+        .rankNumberDiv{
+          font-size:18px;
         }
         .percentileNumberDiv{
-          text-align:right;
-          width:80px;
-          font-size:24px;
-          line-height:80%;
+          font-size:14px;
         }
+        
         #header2{
           width:320px;
           display:inline-block;
@@ -147,39 +147,65 @@
           display:inline-block;
           font-size:24px;
         }
-       
+        .chart{
+/*          border:1px solid black;
+*/          
+        }
+       .mainSections{
+         display:inline-block;
+         vertical-align:top;
+         padding-left:20px;
+       }
+       .svi{
+         color:#409fcb;
+       }
+       #barPopup{
+         position:absolute;
+         background-color:#fff;
+         border:1px solid black;
+         padding:5px;
+         width:200px;
+       }
         </style>
 </head>
 <body>
-  <div id="info">
-      <div id="title">How is the<br><span id="blue">Social<br>Vulnerability<br>Index</span><br>Calculated?</div>
+   <div id="info">
+      <div id="title">How is the<span class="svi"><br>Social<br>Vulnerability<br>Index<br>Calculated?</span></div>
       <div id="subtitle">
         <p>
-          SVI uses these 15 tallies from the census ACS seen at the right. 
+          The Social Vulnerability Index uses these 15 data points from the census ACS seen at the right. 
+          </p>
+          <p>
+          Every county's data for each of the 15 data points is ranked as percentiles. 
+          </p>
+          <p>
+          Each county's SVI score is the sum or its 15 percentiles.
+          </p>
+          <p>
+          The sum is also further ranked into a final percentile, a SVI ranking.
         </p>
         <p>
-          Here is how the svi score for <span id="randomCounty">Gentry County, Missouri</span> is calculated.
+          The numbers at right start at the medians for each set of data points.
         </p>
-        <p>
-          <span style="color:magenta">Adjust the numbers and see how the vulnerability score is effected.</span>
-        </p> 
-    </div>
+        
+    </div> 
 </div>
 <div id="left">
-  <div id="header1">If your <br>county has:</div>
+  <!-- <div id="header1">If your <br>county has:</div>
   <div id="header2">then its <br>ranking is: </div>
-  <br>
+  <br> -->
 <!--<input type="button" id="plus" class="button" value="+" style="margin-left:10px" onclick="PlusCaps()" />
 <input type="tel" id="caps" maxlength="3" size="3" min="0" max="999" pattern="[0-9]" value="0" />
 <input type="button" id="minus" class="button" value="-" style="margin-right:10px" onclick="MinusCaps()" /> -->
 
 </div>
+<div id="right"></div>
 <!-- <div id="right">Then your county's SVI is
   <div id="adding">0</div>
   <div id="sum">0</div>
 
 </div> -->
-
+<div id="barPopup">test</div>
 <script>
   var measures = [
     // "TOTPOP",
@@ -204,7 +230,7 @@
   var measuresPercentDenominators = {
   AGE17:"of population",
   AGE65:"of population",
-  DISABL:"of Noninstituionalized population",
+  DISABL:"of noninstituionalized population",
   LIMENG:"of population",
   CROWD:"of households",
   GROUPQ:"of population",
@@ -216,90 +242,101 @@
   PCI:"",
   POV:"of population",
   SNGPNT:"of households",
-  UNEMP:"of population 16+"
+  UNEMP:""
   }
   var measuresLabels = {
     TOTPOP:"Total Persons",
     HH:"Households",
     HU:"Housing Units",
-  AGE17:"are 17 and younger",
-  AGE65:"are 65 and older",
-  DISABL:"have a disability",
-  LIMENG:"speak limited English",
-  CROWD:"have more people than rooms",
-  GROUPQ:"live in group quarters",
-  MINRTY:"are Minorities",
-  MOBILE:"are Mobile homes",
-  MUNIT:"are in structures with 10+ units",
-  NOHSDP:"have no high school diploma",
-  NOVEH:"have no vehicle available",
+  AGE17:"under 18",
+  AGE65:"over 64",
+  DISABL:"with a disability",
+  LIMENG:"who speak limited English",
+  CROWD:"with more people than rooms",
+  GROUPQ:"in group quarters",
+  MINRTY:"who are Minorities",
+  MOBILE:"that are Mobile homes",
+  MUNIT:"in structures with 10+ units",
+  NOHSDP:"with no high school diploma",
+  NOVEH:"with no vehicle available",
   PCI:"Per capita income",
-  POV:"are below poverty",
+  POV:"below poverty",
   SNGPNT:"have a single parent w/children under 18",
-  UNEMP:"are unemployed"
+  UNEMP:"unemployed"
   }
   
   for(var m in measures){
     var div = d3.select("#left").append("div")//.style("border-bottom","1px solid black")
   
+    var percentDiv = div.append("div").attr("class","mainSections")//.style("display","inline-block").style("vertical-align","top")//.style("border","1px solid blue")
+    var chartDiv = div.append("div").attr("class","mainSections")
+    var rankingDiv = div.append("div").attr("class","mainSections")
+    var percentileDiv = div.append("div").attr("class","mainSections")
+
     
-    div.append("input").attr("type","tel").attr("maxlength","6")
+    percentDiv.append("div")
+    .html(function(){
+      if(measures[m]=="PCI"){
+        return measuresLabels[measures[m]]
+      } else{
+        return "% "+measuresPercentDenominators[measures[m]]+" "+measuresLabels[measures[m]]
+        // +"<br><span id=\"percentile_"+measures[m]+"\"></span>"
+      }
+    })
+    .attr("class","catName")
+    .style("color",colors[4])
+    percentDiv.append("input").attr("type","tel").attr("maxlength","6")
     .attr("min","0").attr("max","99999")
-    .attr("size","3")
+    .attr("size",function(){
+      if(measures[m]=="PCI"){
+        return "7"
+      } else{
+        return "7"
+      }
+    })
     .attr("pattern","[0-9]")
     .attr("value","0")
     .attr("id","count_"+measures[m])
     .attr("class","count")
+    .style("color",colors[4])
     
-    var buttonsDiv = div.append("div").attr("id","buttons").style("display","inline-block")
+    var buttonsDiv = percentDiv.append("div").attr("id","buttons").style("display","inline-block")
     .style("height","30px")
     
     buttonsDiv.append("div")
-    .attr("type","button").attr("id","plus_"+measures[m]).attr("class","plus").html("&#9650;")
+    .attr("type","button").attr("id","plus_"+measures[m]).attr("class","plus").html("&#9650;").style("color",colors[4])
     .on("click",function(){
       var clickedM = d3.select(this).attr("id").replace("plus_","")
       PlusCaps(clickedM)
     })
-    
-    // buttonsDiv.append("div")
-    
     buttonsDiv.append("div")
-    .attr("type","button").attr("id","minus_"+measures[m]).attr("class","minus").html("&#9660;")
+    .attr("type","button").attr("id","minus_"+measures[m]).attr("class","minus").html("&#9660;").style("color",colors[4])
     .on("click",function(){
       var clickedM = d3.select(this).attr("id").replace("minus_","")
       MinusCaps(clickedM)
     })    
     
-    div.append("div")
-    .html(function(){
-      if(measures[m]=="TOTPOP"||measures[m]=="HH"||measures[m]=="HU"){
-        return "&nbsp"+measuresLabels[measures[m]]
-      }else if(measures[m]=="PCI"){
-        return "&nbsp$ "+measuresLabels[measures[m]]
-        +"<br><span id=\"percentile_"+measures[m]+"\"></span>"
-      } else{
-        return "&nbsp% "+measuresPercentDenominators[measures[m]]+" "+measuresLabels[measures[m]]
-        // +"<br><span id=\"percentile_"+measures[m]+"\"></span>"
-      }
-    })
-    .style("display","inline-block").attr("class","catName")
-        //
+    
+       //
     // div.append("div").attr("id","percentileArrow_"+measures[m]).attr("class","arrowToPercentile")
     // .style("display","inline-block").html("<img src=\"arrow.png\">")
-    div.append("div").attr("id","histo_"+measures[m])
-    .style("display","inline-block")  
-    div.append("div").attr("id","percentileNumbers_"+measures[m]).attr("class","percentileNumberDiv")
+    chartDiv.append("div").attr("id","histo_"+measures[m])
+    .style("display","inline-block")
+    .attr("class","chart")
+    
+    // rankingDiv.append("div").attr("id","rankNumbers_"+measures[m]).attr("class","rankNumberDiv")
+    
+    percentileDiv.append("div").attr("id","percentileNumbers_"+measures[m]).attr("class","percentileNumberDiv")
     .style("display","inline-block")
     
  
       
   }
-d3.select("#left").append("div").style("width","530px")
-  .style("border-top","1px solid black")
-  .style("margin-left","100px")
-  .attr("font-size","48px")
+d3.select("#right").append("div")//.style("width","530px")
+  // .style("border-top","1px solid black")
+//  .attr("font-size","48px")
   .attr("id","percentileTally")
-  .html("= 191029").style("text-align","right")
+// .style("text-align","right")
 
 </script>
 <div id="map"></div>

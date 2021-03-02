@@ -15,6 +15,11 @@ function MinusCaps(measureName) {
     }
 	
 }
+var colors = ["#d9732e",
+"#6fc357",
+"#de5550",
+"#c7a435",
+"#409fcb"]
 
 function setNextValue(nextValue,divName) {
   //localStorage.setItem("CapsNum", nextValue);
@@ -44,46 +49,83 @@ Promise.all([allData,tempData])
     ready(data[0],data[1])
 })
 function ready(svi,temp){
-    console.log(svi)
     pub.temp =temp
     pub.svi = svi
-            console.log(pub.temp)
     
     //get random county
-    var randomCounty = svi[Math.round(Math.random()*svi.length)]
-    console.log(randomCounty)
-    d3.select("#randomCounty").html(randomCounty["LOCATION"])
+    var randomCounty = {}//svi[Math.round(Math.random()*svi.length)]
+   // console.log(randomCounty)
+   // d3.select("#randomCounty").html(randomCounty["LOCATION"])
     //fill in numbers
+    
+    
     for(var m in measures){
-        if(measures[m]=="TOTPOP"||measures[m]=="HH"||measures[m]=="HU"){
-          d3.select("#count_"+measures[m]).attr("value",randomCounty["E_"+measures[m]])
-        }else{
-            d3.select("#count_"+measures[m]).attr("value",randomCounty["EP_"+measures[m]])
-        }
+        var average = getAverages(measures[m],pub.svi)
+       // console.log(average)
+        var sorted = svi.sort(function(a,b){
+            return parseFloat(a["EP_"+measures[m]])-parseFloat(b["EP_"+measures[m]])
+        })
+      
+        var lower = svi.length/2
+        var higher = svi.length/2+1
+        var measure = "EP_"+measures[m]
+        // console.log(higher)
+//         console.log(sorted[lower][measure])
+//         console.log(sorted[higher][measure])
+        
+        var median = (parseFloat(sorted[lower][measure])+parseFloat(sorted[higher][measure]))/2
+        
+        // console.log(median)
+        randomCounty["EP_"+measures[m]]=median
+        
+        d3.select("#count_"+measures[m]).attr("value",median)
     }        
     //add percent and percentile
    // var withRandomCounty = svi.push(randomCounty)
     
-    getPercentiles(randomCounty,svi)
+    getPercentiles(randomCounty,pub.svi)
 
     //outline calculations
 }
-
+function getAverages(measure,svi){
+    var sum = 0
+    var count = svi.length
+    for(var i in svi){
+        var value = parseFloat(svi[i]["EP_"+measure])
+        if(value>0){
+            sum+=value
+        }else{
+            count=count-1
+        }
+    }
+    var average = Math.round(sum/count)
+    return average
+}
 function getPercentiles(data,svi){
   //  console.log(svi)
     var notEqual = []
     var percentileTotal = 0
     var precalcTotal = 0
     var addingText = ""
-    svi.push(data)
+    //svi.push(data)
+    
     for(var m in measures){
-        if(measures[m]!="TOTPOP"&&measures[m]!="HH"&&measures[m]!="HU"){
+        var measure = "EP_"+measures[m]
         
             var ordered = svi.sort(function(a,b){
                 return a["EP_"+measures[m]]-b["EP_"+measures[m]]
             })
             
-            var percentile = Math.round(ordered.indexOf(data)/svi.length*10000)/10000
+            
+            for(var s in ordered){                
+                if(parseFloat(data[measure])<parseFloat(ordered[s][measure])){
+                   var index = s
+                    break
+                }
+            }
+            
+            var percentile = Math.round(index/svi.length*1000)/1000
+            
             var precalcPercentile = data["EPL_"+measures[m]]
         
             // if(measures[m]=="PCI"){
@@ -101,24 +143,31 @@ function getPercentiles(data,svi){
                 
             }
         
+            d3.select("#rankNumbers_"+measures[m])
+            .html(function(){
+                    return "higher than <br> <span class=\"rankNumber\">"+index+"</span><br> other counties "//"<br> out of "+svi.length+""                
+            })
+            .style("color",colors[2])   
+            
             d3.select("#percentileNumbers_"+measures[m])
             .html(function(){
-                    return ordered.indexOf(data)+"th out of "+svi.length+" counties"
-                    +"<br><span class=\"percentileNumber\">"+percentile+" percentile"+"</span>"
-                
-            }
-                
-            )
+                    return "higher than "+index+"<br> other counties<br><span class=\"percentileNumber\">"+percentile+"</span> percentile"
+            })
+            .style("color",colors[0])
             
-            var h = 100
-            var w = 300
+            var h = 50
+            var w = 200
             var p = 20
             
+            d3.select("#histo_"+measures[m]+" svg").remove()
             var svg = d3.select("#histo_"+measures[m])
                     .append("svg")
-                    .attr("width",w+p*4)
-                    .attr("height",h+p*4)
+                    .attr("width",w+p*3)
+                    .attr("height",h+p*3)
             //https://observablehq.com/@d3/histogram
+             var max = d3.max(svi,function(d){return d["EP_"+measures[m]]})
+             // console.log(Math.ceil(max))
+           
            var bins = d3.bin()
              .value(function(d){
                  if(parseFloat(d["EP_"+measures[m]])<0){
@@ -138,22 +187,29 @@ function getPercentiles(data,svi){
              .range([0,h])
              .domain([d3.max(bins,function(d){return d.length}),0])
              
+             
+             
+             
              var x = d3.scaleLinear()
              .range([0,w])
              .domain([0,100])
-             console.log(measures[m])
-                 console.log(bins)
-             svg.append('text').text("Distribution for all counties "+measures[m]).attr("x",10).attr("y",10)//.attr("text-anchor","end")
-            svg.append("g")
-                  .call(d3.axisLeft(y2).ticks(5))
-                .attr("transform","translate(45,20)")
-             svg.append("text").text("# of counties").attr("x",10).attr("y",30).style("writing-mode","vertical-rl")
              
-             svg.append("text").text("% of population").attr("x",w/2).attr("y",h+p*3)
+             // svg.append('text').text("Distribution for all counties")
+  //            .attr("x",0).attr("y",p/2)//.attr("text-anchor","end")
+  //
+            svg.append("g")
+                  .call(d3.axisLeft(y2).ticks(3))
+                .attr("transform","translate(45,"+p+")")
+             
+             svg.append("text").text("# of counties").attr("x",10).attr("y",h/2).style("writing-mode","vertical-rl")
+             .style("font-style","italic").style("font-size","11px")
+             
+             svg.append("text").text("% of population").attr("x",w/2).attr("y",h+p*2.5)
+             .style("font-style","italic").style("font-size","11px")
              
             svg.append("g")
-                  .call(d3.axisBottom(x))
-                .attr("transform","translate(45,"+(h+20)+")")
+                  .call(d3.axisBottom(x).ticks(10))
+                .attr("transform","translate(45,"+(h+p)+")")
              
            
                  
@@ -171,47 +227,63 @@ function getPercentiles(data,svi){
                 .attr("count",function(d){
                     return d.length
                 })
+              .attr("measure",function(d){
+                 return measuresPercentDenominators[measures[m]]+" "+measuresLabels[measures[m]]
+              })
                 .attr("range",function(d){
-                    return d.x0 +"-"+d.x1
+                    return d.x0 +"% - "+d.x1+"%"
                 })
               //   .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
                  .attr("width", function(d) { return w/100-1;})
                  .attr("height", function(d) { return y(d.length) })
                  .style("fill", function(d,i){
                      if(d.x0<data["EP_"+measures[m]]){
-                         return "#00aeef"
+                         return colors[2]
                      }else{
-                         return "#aaa"
+                         return "#000"
                      }
                  })
                 .on("mouseover",function(d){
-                    console.log(d3.select(this).attr("count"))
+                    var popupText = d3.select(this).attr("range")+" "
+                                +d3.select(this).attr("measure")
+                                +":<br>"
+                                +d3.select(this).attr("count")+" counties"
+                    
+                    d3.select("#barPopup").html(popupText)
+                    .style("left",window.event.pageX+10+"px")
+                    .style("top",window.event.pageY+"px")
+                    .style("display","inline")
                 })
-                .attr("transform","translate(45,20)")
+                .on("mouseout",function(){
+                    d3.select("#barPopup").style("display","none")
+                })
+                .attr("transform","translate(45,"+p+")")
             
-            svg.append("circle").attr("r",3)
+       svg.append("circle").attr("r",5)
                 .attr("cx",function(){
                     return x(data["EP_"+measures[m]])+45
                 })
-                .attr("cy",h+20)
-                .attr("fill","magenta")
-            svg.append("rect").attr("fill","magenta")
+                .attr("cy",p*.5)
+                 .attr("fill",colors[4])
+   //
+            svg.append("rect")
+                .attr("fill",colors[4])
                 .attr("x",function(){
                     return x(data["EP_"+measures[m]])+45
                 })
-                .attr("y",20)
+                .attr("y",p*.5)
                 .attr("width",1)
-                .attr("height",h)
+                .attr("height",h+p/2)
                 
             svg.append("text")
-                .attr("fill","magenta")
+                .attr("fill",colors[4])
                 .attr("x",function(){
-                    return x(data["EP_"+measures[m]])+45
+                    return x(data["EP_"+measures[m]])+55
                 })
-                .attr("text-anchor","middle")
-                .attr("y",18)
+                .style("font-size","20px")
+                .attr("text-anchor","start")
+                .attr("y",p-2)
                 .text(data["EP_"+measures[m]]+ "%")
-                .attr("fill","magenta")
         
             // d3.select("#percentile_"+measures[m])
 //             .html(""//+Math.round(percentile*100)/100  +"</span> Percentile, "
@@ -228,7 +300,7 @@ function getPercentiles(data,svi){
      //        }
             // console.log([measures[m],percentile,precalcPercentile])
     //         console.log(ordered.indexOf(data))
-         }
+         
     }
         //
     // console.log(data["SPL_THEMES"])
@@ -257,19 +329,18 @@ function getPercentiles(data,svi){
     
     
     d3.select("#adding").html(addingText)
-    d3.select("#percentileTally").html("<span style=\"font-size:36px\">County SVI = </span><span id=\"yourCountyTitle\">"+Math.round(percentileTotal*10000)/10000
-                    +"</span><br>out of possible 15,<br>it has a higher vulerability score than <span id=\"yourCountyTitle\">"
-                    +Math.round(totalPercentile*10000)/100+"%</span><br> of the counties in this country.<br>"
-                    +"Other counties most similar in overall SVI are: "+neighbors[0].LOCATION+"("+neighbors[0]["RPL_THEMES"]+")"
-                    +" and "+neighbors[1].LOCATION+"("+neighbors[1]["RPL_THEMES"]+")")
-    // d3.select("#sum").html("<span id=\"yourCountyTitle\">"+Math.round(percentileTotal*10000)/10000
- //                    +"</span>out of possible 15,<br>it has a higher vulerability score than <span id=\"yourCountyTitle\">"
- //                    +Math.round(totalPercentile*10000)/100+"%</span> of the counties in this country.<br>"
- //                    +"Other counties most similar in overall SVI are: "+neighbors[0].LOCATION+"("+neighbors[0]["RPL_THEMES"]+")"
- //                    +" and "+neighbors[1].LOCATION+"("+neighbors[1]["RPL_THEMES"]+")"
- //                )
-    
+    d3.select("#percentileTally").html("The sum of these 15 percentiles and the <span class=\"percentileNumber\">SVI is "
+                    +Math.round(percentileTotal*10000)/10000
+                    +"</span><br>out of possible 15. This total is higher than "
+                    +i+" other counties in this country. The SVI ranking is the percentile rank of "
+                    +"<span class=\"totalpercentileNumber\">"+Math.round(totalPercentile*10000)/100+"%</span>"
+                  )
+
+    d3.selectAll(".percentileNumber").style("color",colors[0]).style("font-size","40px")
+    d3.selectAll(".totalRankNumber").style("color",colors[3]).style("font-size","40px")
+    d3.selectAll(".totalpercentileNumber").style("color",colors[3]).style("font-size","40px")
                 
-    console.log(svi.indexOf(data))
+    // pub.svi.splice(svi.indexOf(data), 1);
+  //   console.log(pub.svi.length)
     
 }
